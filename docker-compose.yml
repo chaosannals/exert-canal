@@ -1,7 +1,8 @@
 version: '3.8'
 
 services: 
-  exert-canal-mysql-server:
+  # MySQL
+  mysql-server:
     image: mysql
     container_name: exert-canal-mysql-server
     restart: always
@@ -13,14 +14,56 @@ services:
       - ./docker/conf/:/etc/mysql/:ro
     environment:
       - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=exert
+      - MYSQL_DATABASE=canal_manager
     networks: 
       - exert-canal-net
 
-  exert-canal-server:
+  # Canal 服务器
+  canal-server:
+    image: canal/canal-server
+    container_name: exert-canal-server
+    depends_on: 
+      - mysql-server
+    restart: always
+    ports: 
+      - '11110:11110'
+      - '11111:11111'
+      - '11112:11112'
+      - '9100:9100'
+    environment: 
+      - canal.auto.scan=false
+      - canal.destinations=test
+      - canal.instance.master.address=exert-canal-mysql-server:3306
+      - canal.instance.dbUsername=root
+      - canal.instance.dbPassword=password
+      - canal.instance.connectionCharset=UTF-8
+      - canal.instance.tsdb.enable=true
+      - canal.instance.gtidon=false
+      - canal.instance.filter.regex=.*\\..*
+    networks: 
+      - exert-canal-net
 
+  # Canal 管理服务器
+  admin-server:
+    image: canal/canal-admin
+    container_name: exert-canal-admin-server
+    depends_on: 
+      - mysql-server
+    restart: always
+    ports:
+      - "8089:8089"
+    environment: 
+      - server.port=8089
+      - canal.adminUser=admin
+      - canal.adminPasswd=123456
+      - spring.datasource.address=exert-canal-mysql-server:3306
+      - spring.datasource.database=canal_manager
+      - spring.datasource.username=root
+      - spring.datasource.password=password
+    networks: 
+      - exert-canal-net
 
 networks: 
-  exert-mysql-net:
+  exert-canal-net:
     name: exert-canal-net
     driver: bridge

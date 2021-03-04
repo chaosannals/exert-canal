@@ -11,7 +11,7 @@ try {
 
     $client->connect("127.0.0.1", 11111);
     $client->checkValid();
-    $client->subscribe("1001", "example", ".*\\..*");
+    $client->subscribe("1001", "test", ".*\\..*");
 
     while (true) {
         $message = $client->get(100);
