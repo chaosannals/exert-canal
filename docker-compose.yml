@@ -9,12 +9,28 @@ services:
     ports: 
       - '3306:3306'
     volumes: 
-      - ./docker/data/:/var/lib/mysql
-      - ./docker/file/:/var/lib/mysql-files
-      - ./docker/conf/:/etc/mysql/:ro
+      - ./data/mysql/data/:/var/lib/mysql
+      - ./data/mysql/file/:/var/lib/mysql-files
+      - ./data/mysql/conf/:/etc/mysql/:ro
     environment:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=canal_manager
+    networks: 
+      - exert-canal-net
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: exert-canal-rabbitmq
+    restart: always
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes: 
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    environment: 
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
     networks: 
       - exert-canal-net
 
@@ -24,6 +40,7 @@ services:
     container_name: exert-canal-server
     depends_on: 
       - mysql-server
+      - rabbitmq
     restart: always
     ports: 
       - '11110:11110'
@@ -48,7 +65,7 @@ services:
     image: canal/canal-admin
     container_name: exert-canal-admin-server
     depends_on: 
-      - mysql-server
+      - canal-server
     restart: always
     ports:
       - "8089:8089"
